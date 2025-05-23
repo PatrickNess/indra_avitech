@@ -1,6 +1,7 @@
 package com.indra.cajko.db;
 import  com.indra.cajko.dto.User;
 import com.indra.cajko.logging.LoggingUtils;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -11,14 +12,16 @@ import static com.indra.cajko.db.UserDbQueries.*;
 public enum UserDbServiceImpl implements LoggingUtils, UserDbService {
     INSTANCE;
 
+    private final Logger logger = logger();
     private final Connection dbConnection;
 
     UserDbServiceImpl() {
         try {
             dbConnection = DriverManager.getConnection("jdbc:sqlite:sample.db");
-            logger().debug("Database connection established");
+            logger.debug("Database connection established");
             initDbTable();
         } catch (SQLException e) {
+            // we want the application to fail in case connection to db is not successful or User table not created
             throw new RuntimeException(e);
         }
     }
@@ -26,7 +29,7 @@ public enum UserDbServiceImpl implements LoggingUtils, UserDbService {
     private void initDbTable() throws SQLException {
         try (Statement stmt = dbConnection.createStatement()) {
             stmt.execute(CREATE_USERS_TABLE);
-            logger().debug("Users table created");
+            logger.debug("Users table created");
         }
     }
 
@@ -37,10 +40,9 @@ public enum UserDbServiceImpl implements LoggingUtils, UserDbService {
             pstmt.setString(2, user.guid());
             pstmt.setString(3, user.name());
             pstmt.executeUpdate();
-            logger().info("Inserted user: {}", user);
+            logger.info("Inserted user: {}", user);
         } catch (SQLException e) {
-            logger().error("Error inserting user", e);
-            throw new RuntimeException(e);
+            logger.error("Error inserting user", e);
         }
     }
 
@@ -57,8 +59,7 @@ public enum UserDbServiceImpl implements LoggingUtils, UserDbService {
                 ));
             }
         } catch (SQLException e) {
-            logger().error("Error fetching users", e);
-            throw new RuntimeException(e);
+            logger.error("Error fetching users", e);
         }
         return users;
     }
@@ -67,10 +68,9 @@ public enum UserDbServiceImpl implements LoggingUtils, UserDbService {
     public void deleteAllUsers() {
         try (Statement stmt = dbConnection.createStatement()) {
             int deleted = stmt.executeUpdate(DELETE_ALL_USERS);
-            logger().info("Deleted {} users from SUSERS table", deleted);
+            logger.info("Deleted {} users from SUSERS table", deleted);
         } catch (SQLException e) {
-            logger().error("Error deleting all users", e);
-            throw new RuntimeException(e);
+            logger.error("Error deleting all users", e);
         }
     }
 }
